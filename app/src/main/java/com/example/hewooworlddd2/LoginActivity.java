@@ -12,6 +12,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.android.volley.Request;
@@ -19,6 +20,10 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.example.hewooworlddd2.appu.Control;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,10 +31,8 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by Kuncoro on 03/24/2017.
- */
 public class LoginActivity extends AppCompatActivity {
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
 
     ProgressDialog pDialog;
     Button btn_register, btn_login;
@@ -39,7 +42,7 @@ public class LoginActivity extends AppCompatActivity {
     int success;
     ConnectivityManager conMgr;
 
-    private String url = Server.URL + "login.php";
+    private static final String url = Server.URL + "login.php";
 
     private static final String TAG = LoginActivity.class.getSimpleName();
 
@@ -114,6 +117,7 @@ public class LoginActivity extends AppCompatActivity {
                     // Prompt user to enter credentials
                     Toast.makeText(getApplicationContext() ,"Kolom tidak boleh kosong", Toast.LENGTH_LONG).show();
                 }
+
             }
         });
 
@@ -140,7 +144,7 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onResponse(String response) {
-                Log.e(TAG, "Login Response: " + response.toString());
+                Log.e(TAG, "Login Response: " + response);
                 hideDialog();
 
                 try {
@@ -161,7 +165,7 @@ public class LoginActivity extends AppCompatActivity {
                         editor.putBoolean(session_status, true);
                         editor.putString(TAG_ID, id);
                         editor.putString(TAG_USERNAME, username);
-                        editor.commit();
+                        editor.apply();
 
                         // Memanggil main activity
                         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
@@ -196,7 +200,7 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             protected Map<String, String> getParams() {
                 // Posting parameters to login url
-                Map<String, String> params = new HashMap<String, String>();
+                Map<String, String> params = new HashMap<>();
                 params.put("username", username);
                 params.put("password", password);
 
@@ -217,5 +221,29 @@ public class LoginActivity extends AppCompatActivity {
     private void hideDialog() {
         if (pDialog.isShowing())
             pDialog.dismiss();
+    }
+
+    private void testAddFirestore(){
+        // Create a new user with a first and last name
+        Map<String, Object> user = new HashMap<>();
+        user.put("first", "Ada");
+        user.put("last", "Lovelace");
+        user.put("born", 1815);
+
+// Add a new document with a generated ID
+        db.collection("users")
+                .add(user)
+                .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                    @Override
+                    public void onSuccess(DocumentReference documentReference) {
+                        Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.w(TAG, "Error adding document", e);
+                    }
+                });
     }
 }
